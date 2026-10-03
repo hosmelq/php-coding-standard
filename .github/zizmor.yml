@@ -1,0 +1,14 @@
+rules:
+  secrets-outside-env:
+    config:
+      allow:
+        - FONTAWESOME_NPM_AUTH_TOKEN
+        - HEROUI_AUTH_TOKEN
+  unpinned-images:
+    ignore:
+      - pullfrog.yml:28
+  unpinned-uses:
+    config:
+      policies:
+        pullfrog/pullfrog: ref-pin
+        '*': hash-pin

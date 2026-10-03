@@ -1,0 +1,114 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  check-unused-composer-dependencies:
+    name: Check unused composer dependencies
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check unused composer dependencies
+        uses: hosmelq/.github/.github/actions/composer-unused-dependencies-check@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: '8.4'
+
+  check-composer:
+    name: Check composer
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check composer normalize
+        uses: hosmelq/.github/.github/actions/composer-normalize-check@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: '8.4'
+
+  check-static-code:
+    name: Check static code
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check static code
+        uses: hosmelq/.github/.github/actions/phpstan-check@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: '8.4'
+
+  check-code-quality:
+    name: Check code quality
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check code quality
+        uses: hosmelq/.github/.github/actions/php-rector-check@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: '8.4'
+
+  check-code-style:
+    name: Check code style
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check code style
+        uses: hosmelq/.github/.github/actions/php-pint-check@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: '8.4'
+
+  tests:
+    name: PHP ${{ matrix.php }}
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install composer dependencies
+        uses: hosmelq/.github/.github/actions/composer-install@0e629f62b840abf1d0d07479e6efa99567293001
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Installed dependencies
+        run: composer show -D
+
+      - name: Setup problem matchers
+        run: |
+          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Run tests
+        run: composer test
