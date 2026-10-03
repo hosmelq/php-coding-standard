@@ -6,5 +6,5 @@ arch()->preset()->php();
 arch()->preset()->security();
 
 arch('strict types')
-    ->expect('HosmelQ\Namespace')
+    ->expect('HosmelQ\PhpCodingStandard')
     ->toUseStrictTypes();

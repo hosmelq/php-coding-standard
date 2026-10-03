@@ -32,7 +32,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup PHP
-        uses: hosmelq/.github/.github/actions/php-setup@0e629f62b840abf1d0d07479e6efa99567293001
+        uses: hosmelq/.github/.github/actions/php-setup@32f4a95b53649f1634b195193a61bb56a6b26d50
         with:
           php-tools: ''
           php-version: '8.4'

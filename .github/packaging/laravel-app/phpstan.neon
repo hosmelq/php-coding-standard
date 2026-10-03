@@ -1,0 +1,7 @@
+includes:
+  - vendor/hosmelq/php-coding-standard/config/phpstan-laravel-app.neon
+
+parameters:
+  paths:
+    - src
+  tmpDir: .cache/phpstan

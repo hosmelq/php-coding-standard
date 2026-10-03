@@ -1,70 +1,84 @@
 {
-    "name": "hosmelq/template",
-    "description": "",
-    "license": "MIT",
-    "keywords": [
-        "hosmelq"
-    ],
-    "authors": [
-        {
-            "name": "Hosmel Quintana",
-            "email": "hosmelq@gmail.com"
-        }
-    ],
-    "require": {
-        "php": "^8.4",
-        "thecodingmachine/safe": "^3.4"
+  "name": "hosmelq/php-coding-standard",
+  "description": "Shared ECS, Rector and PHPStan configuration with custom PHP formatting rules.",
+  "license": "MIT",
+  "keywords": [
+    "coding-standard",
+    "dev",
+    "ecs",
+    "hosmelq",
+    "phpstan",
+    "rector",
+    "static analysis"
+  ],
+  "authors": [
+    {
+      "name": "Hosmel Quintana",
+      "email": "hosmelq@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.4",
+    "friendsofphp/php-cs-fixer": "^3.95.27",
+    "phpstan/extension-installer": "^1.4.3",
+    "phpstan/phpstan": "^2.2.17",
+    "phpstan/phpstan-deprecation-rules": "^2.0.5",
+    "phpstan/phpstan-strict-rules": "^2.0.12",
+    "rector/rector": "^2.6.7",
+    "spaze/phpstan-disallowed-calls": "^4.14",
+    "symplify/easy-coding-standard": "^13.3.2",
+    "thecodingmachine/phpstan-safe-rule": "^1.4.7",
+    "thecodingmachine/safe": "^3.4",
+    "tomasvotruba/type-coverage": "^2.4.1"
+  },
+  "require-dev": {
+    "ergebnis/composer-normalize": "^2.54",
+    "pestphp/pest": "^5.3",
+    "pestphp/pest-plugin-agent": "^5.0",
+    "shipmonk/composer-dependency-analyser": "^1.8.4",
+    "symfony/process": "^8.1.7"
+  },
+  "suggest": {
+    "driftingly/rector-laravel": "Required for the Laravel app Rector preset.",
+    "larastan/larastan": "Required for the Laravel package and app PHPStan presets.",
+    "nesbot/carbon": "Required at runtime by code using the Laravel Rector presets.",
+    "pestphp/pest-plugin-rector": "Required for the optional Pest Rector set."
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "HosmelQ\\PhpCodingStandard\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "HosmelQ\\PhpCodingStandard\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "ergebnis/composer-normalize": true,
+      "pestphp/pest-plugin": true,
+      "phpstan/extension-installer": true
     },
-    "require-dev": {
-        "ergebnis/composer-normalize": "^2.52",
-        "laravel/pint": "^1.30",
-        "pestphp/pest": "^5.0",
-        "pestphp/pest-plugin-agent": "^5.0",
-        "pestphp/pest-plugin-rector": "^5.0",
-        "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.2",
-        "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-strict-rules": "^2.0",
-        "rector/rector": "^2.6",
-        "shipmonk/composer-dependency-analyser": "^1.8",
-        "spaze/phpstan-disallowed-calls": "^4.14",
-        "thecodingmachine/phpstan-safe-rule": "^1.4",
-        "ticketswap/phpstan-error-formatter": "^1.3",
-        "tomasvotruba/type-coverage": "^2.3"
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true,
-    "autoload": {
-        "psr-4": {
-            "HosmelQ\\Namespace\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "HosmelQ\\Namespace\\Tests\\": "tests/"
-        }
-    },
-    "config": {
-        "allow-plugins": {
-            "ergebnis/composer-normalize": true,
-            "pestphp/pest-plugin": true,
-            "phpstan/extension-installer": true
-        },
-        "sort-packages": true
-    },
-    "scripts": {
-        "phpstan": "phpstan analyse --configuration=phpstan.neon.dist --memory-limit=4G",
-        "pint": "pint",
-        "rector": "rector",
-        "test": "pest",
-        "test-coverage": "pest --coverage"
-    },
-    "scripts-descriptions": {
-        "phpstan": "Run PHPStan static analysis.",
-        "pint": "Format code using Laravel Pint.",
-        "rector": "Run Rector automated refactoring.",
-        "test": "Run the test suite using Pest.",
-        "test-coverage": "Run the test suite with code coverage using Pest."
-    },
-    "$schema": "https://getcomposer.org/schema.json"
+    "sort-packages": true
+  },
+  "scripts": {
+    "ecs": "ecs check --fix=true",
+    "ecs:check": "ecs check",
+    "phpstan": "phpstan analyse --configuration=phpstan.neon.dist --memory-limit=4G",
+    "rector": "rector",
+    "test": "pest",
+    "test-coverage": "pest --coverage"
+  },
+  "scripts-descriptions": {
+    "ecs": "Format PHP code using the shared ECS set.",
+    "ecs:check": "Check PHP formatting using the shared ECS set.",
+    "phpstan": "Run PHPStan static analysis.",
+    "rector": "Run Rector automated refactoring.",
+    "test": "Run the test suite using Pest.",
+    "test-coverage": "Run the test suite with code coverage using Pest."
+  },
+  "$schema": "https://getcomposer.org/schema.json"
 }

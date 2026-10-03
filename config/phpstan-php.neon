@@ -1,0 +1,23 @@
+includes:
+  - %rootDir%/../../spaze/phpstan-disallowed-calls/disallowed-dangerous-calls.neon
+  - %rootDir%/../../spaze/phpstan-disallowed-calls/disallowed-execution-calls.neon
+  - %rootDir%/../../spaze/phpstan-disallowed-calls/disallowed-insecure-calls.neon
+  - %rootDir%/../../spaze/phpstan-disallowed-calls/disallowed-loose-calls.neon
+
+parameters:
+  checkBenevolentUnionTypes: true
+  level: max
+  strictRules:
+    dynamicCallOnStaticMethod: false
+  tips:
+    treatPhpDocTypesAsCertain: false
+  type_coverage:
+    constant: 100
+    param: 100
+    property: 100
+    return: 100
+  type_perfect:
+    narrow_param: true
+    narrow_return: true
+    no_mixed: true
+    null_over_false: true

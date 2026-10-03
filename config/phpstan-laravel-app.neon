@@ -1,0 +1,8 @@
+includes:
+  - phpstan-laravel-package.neon
+
+parameters:
+  checkModelProperties: true
+  excludePaths:
+    analyse:
+      - %currentWorkingDirectory%/bootstrap/cache

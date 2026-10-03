@@ -1,0 +1,10 @@
+includes:
+  - phpstan-php.neon
+
+parameters:
+  checkAuthCallsWhenInRequestScope: true
+  checkConfigTypes: true
+  checkModelProperties: false
+  checkOctaneCompatibility: true
+  noEnvCallsOutsideOfConfig: true
+  noUnnecessaryEnumerableToArrayCalls: true

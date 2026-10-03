@@ -13,48 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  check-unused-composer-dependencies:
-    name: Check unused composer dependencies
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Check unused composer dependencies
-        uses: hosmelq/.github/.github/actions/composer-unused-dependencies-check@0e629f62b840abf1d0d07479e6efa99567293001
-        with:
-          php-version: '8.4'
-
-  check-composer:
-    name: Check composer
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Check composer normalize
-        uses: hosmelq/.github/.github/actions/composer-normalize-check@0e629f62b840abf1d0d07479e6efa99567293001
-        with:
-          php-version: '8.4'
-
-  check-static-code:
-    name: Check static code
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Check static code
-        uses: hosmelq/.github/.github/actions/phpstan-check@0e629f62b840abf1d0d07479e6efa99567293001
-        with:
-          php-version: '8.4'
-
   check-code-quality:
     name: Check code quality
 
@@ -63,9 +21,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Check code quality
-        uses: hosmelq/.github/.github/actions/php-rector-check@0e629f62b840abf1d0d07479e6efa99567293001
+        uses: hosmelq/.github/.github/actions/php-rector-check@32f4a95b53649f1634b195193a61bb56a6b26d50
         with:
           php-version: '8.4'
 
@@ -77,30 +37,118 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Check code style
-        uses: hosmelq/.github/.github/actions/php-pint-check@0e629f62b840abf1d0d07479e6efa99567293001
+        uses: hosmelq/.github/.github/actions/php-ecs-check@32f4a95b53649f1634b195193a61bb56a6b26d50
         with:
           php-version: '8.4'
 
-  tests:
-    name: PHP ${{ matrix.php }}
+  check-composer:
+    name: Check composer
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check composer normalize
+        uses: hosmelq/.github/.github/actions/composer-normalize-check@32f4a95b53649f1634b195193a61bb56a6b26d50
+        with:
+          php-version: '8.4'
+
+  check-static-code:
+    name: Check static code
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check static code
+        uses: hosmelq/.github/.github/actions/phpstan-check@32f4a95b53649f1634b195193a61bb56a6b26d50
+        with:
+          php-version: '8.4'
+
+  check-unused-composer-dependencies:
+    name: Check unused composer dependencies
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check unused composer dependencies
+        uses: hosmelq/.github/.github/actions/composer-unused-dependencies-check@32f4a95b53649f1634b195193a61bb56a6b26d50
+        with:
+          php-version: '8.4'
+
+  packaging:
+    name: Packaging (${{ matrix.consumer }}, PHP ${{ matrix.php }})
 
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
+        consumer: [laravel-app, laravel-package, php]
         php: ['8.4', '8.5']
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - name: Install composer dependencies
-        uses: hosmelq/.github/.github/actions/composer-install@0e629f62b840abf1d0d07479e6efa99567293001
+      - name: Setup PHP
+        uses: hosmelq/.github/.github/actions/php-setup@32f4a95b53649f1634b195193a61bb56a6b26d50
         with:
           php-version: ${{ matrix.php }}
+
+      - name: Check packaged consumer
+        env:
+          CONSUMER: ${{ matrix.consumer }}
+        run: bash .github/packaging/smoke.sh "$CONSUMER"
+
+  tests:
+    name: PHP ${{ matrix.php }} (${{ matrix.dependencies }})
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        dependencies: [prefer-stable]
+        include:
+          - dependencies: prefer-lowest
+            php: '8.4'
+        php: ['8.4', '8.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: hosmelq/.github/.github/actions/php-setup@32f4a95b53649f1634b195193a61bb56a6b26d50
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Install composer dependencies
+        env:
+          DEPENDENCIES: ${{ matrix.dependencies }}
+        run: composer update --no-interaction --no-progress --prefer-dist --prefer-stable --"$DEPENDENCIES"
 
       - name: Installed dependencies
         run: composer show -D

@@ -1,0 +1,25 @@
+{
+  "name": "example/laravel-app-consumer",
+  "description": "An isolated distribution smoke test.",
+  "license": "MIT",
+  "require": {
+    "php": "^8.4",
+    "laravel/framework": "^13.0"
+  },
+  "require-dev": {
+    "driftingly/rector-laravel": "^2.6",
+    "hosmelq/php-coding-standard": "1.0.0",
+    "larastan/larastan": "^3.12"
+  },
+  "autoload": {
+    "psr-4": {
+      "Example\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true
+    },
+    "sort-packages": true
+  }
+}
