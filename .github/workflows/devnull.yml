@@ -1,0 +1,29 @@
+name: /dev/null
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  commit:
+    name: Commit release
+
+    environment: devnull
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Commit to /dev/null
+        uses: nunomaduro/dev-null.sh/.github/actions/commit@d3348376cba7cef663b0790eaeaa579e6855fb57 # production
+        with:
+          body: |
+            ${{ github.event.repository.name }} ${{ github.event.release.tag_name }} is out.
+
+            ${{ github.event.release.body }}
+
+            Opinionated ECS, Rector, and PHPStan presets for PHP and Laravel packages and applications.
+
+            ${{ github.event.release.html_url }}
+          ssh-key: ${{ secrets.DEVNULL_SSH_KEY }}
