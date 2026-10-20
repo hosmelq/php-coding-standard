@@ -56,8 +56,12 @@ return ECSConfig::configure()
     ->withPaths([__DIR__.'/src', __DIR__.'/tests']);
 ```
 
-Create `rector.php`. Add `CodingStandard::RECTOR_PEST` to apply Pest's coding
-style rules:
+Create `rector.php`. To apply Pest's coding style rules with Pest 5, require
+`pestphp/pest-plugin-rector` and add `CodingStandard::RECTOR_PEST`:
+
+```bash
+composer require --dev pestphp/pest-plugin-rector
+```
 
 ```php
 <?php
