@@ -15,6 +15,7 @@ use SplFileInfo;
 
 final class HeredocBlankLineFixer extends AbstractFixer
 {
+    #[Override]
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -40,6 +41,7 @@ final class HeredocBlankLineFixer extends AbstractFixer
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isTokenKindFound(T_START_HEREDOC);
@@ -48,6 +50,7 @@ final class HeredocBlankLineFixer extends AbstractFixer
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     protected function applyFix(SplFileInfo $file, Tokens $tokens): void
     {
         foreach ($tokens as $index => $token) {

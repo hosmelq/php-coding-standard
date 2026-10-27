@@ -96,7 +96,8 @@ vendor/bin/phpstan analyse
 ```
 
 Run Rector before ECS so ECS lays out Rector's changes. One ECS run is enough. PHPStan runs at level `max` with strict, deprecation,
-safe function, disallowed call, and full type coverage rules. The Laravel
+safe function, disallowed call, and full type coverage rules, and requires
+`#[\Override]` on methods that override a parent or interface method. The Laravel
 application preset also analyses `app`, `bootstrap`, `config`, `database`, and
 `routes`. PHPStan caches its results in `.cache/phpstan`, so add `.cache` to
 `.gitignore`.

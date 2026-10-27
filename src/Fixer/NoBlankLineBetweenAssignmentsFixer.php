@@ -34,6 +34,7 @@ final class NoBlankLineBetweenAssignmentsFixer extends AbstractFixer implements
         [T_XOR_EQUAL],
     ];
 
+    #[Override]
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -55,6 +56,7 @@ final class NoBlankLineBetweenAssignmentsFixer extends AbstractFixer implements
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isTokenKindFound(T_VARIABLE);
@@ -63,6 +65,7 @@ final class NoBlankLineBetweenAssignmentsFixer extends AbstractFixer implements
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     protected function applyFix(SplFileInfo $file, Tokens $tokens): void
     {
         $starts = [];

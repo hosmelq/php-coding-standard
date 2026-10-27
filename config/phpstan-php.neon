@@ -6,6 +6,7 @@ includes:
 
 parameters:
   checkBenevolentUnionTypes: true
+  checkMissingOverrideMethodAttribute: true
   editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'
   errorFormat: ticketswap
   level: max

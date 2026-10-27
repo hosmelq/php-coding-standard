@@ -46,6 +46,7 @@ final class LineLengthFixer extends AbstractFixer implements
         parent::__construct();
     }
 
+    #[Override]
     public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
@@ -76,6 +77,7 @@ final class LineLengthFixer extends AbstractFixer implements
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isAnyTokenKindsFound([
@@ -88,6 +90,7 @@ final class LineLengthFixer extends AbstractFixer implements
     /**
      * @param Tokens<Token> $tokens
      */
+    #[Override]
     protected function applyFix(SplFileInfo $file, Tokens $tokens): void
     {
         $configuration = $this->configuration;
@@ -128,6 +131,7 @@ final class LineLengthFixer extends AbstractFixer implements
         }
     }
 
+    #[Override]
     protected function createConfigurationDefinition(): FixerConfigurationResolverInterface
     {
         return new FixerConfigurationResolver([
