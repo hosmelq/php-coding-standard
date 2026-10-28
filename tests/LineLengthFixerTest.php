@@ -138,9 +138,13 @@ it('formats method chains', function (string $input, string $expected): void {
         "<?php\nQuery::first('first argument value')?->second('second argument value')->third('third argument value');\n",
         "<?php\nQuery::first('first argument value')\n    ?->second('second argument value')\n    ->third('third argument value');\n",
     ],
-    'two long calls break the last call' => [
+    'two long calls break before the last call' => [
         "<?php\n\$query->first('first argument value that is long')->second('second argument value that is long too');\n",
-        "<?php\n\$query->first('first argument value that is long')->second(\n    'second argument value that is long too',\n);\n",
+        "<?php\n\$query->first('first argument value that is long')\n    ->second('second argument value that is long too');\n",
+    ],
+    'two long calls split arguments when the last call cannot fit' => [
+        "<?php\n\$query->first('first argument value that is long')->secondWithAnExceptionallyLongMethodName('second argument value that is long too and needs its own line');\n",
+        "<?php\n\$query->first('first argument value that is long')->secondWithAnExceptionallyLongMethodName(\n    'second argument value that is long too and needs its own line',\n);\n",
     ],
 ]);
 

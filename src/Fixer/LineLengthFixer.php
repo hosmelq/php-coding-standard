@@ -23,9 +23,9 @@ use PhpCsFixer\Tokenizer\Tokens;
 use SplFileInfo;
 
 /**
- * Lays out code by line width in a single pass. Chains that fit are joined first. Then each
+ * Lays out code by line width in a single run. Chains that fit are joined first. Then each
  * line that is too long breaks its outermost construct, and the lines below it are measured
- * with their final indentation.
+ * with their final indentation. Relocated chains are joined at their final positions.
  *
  * @implements ConfigurableFixerInterface<array{line_length?: int}, array{line_length: int}>
  */
@@ -129,6 +129,8 @@ final class LineLengthFixer extends AbstractFixer implements
                 $first = $last + 1;
             }
         }
+
+        $this->joinChains($tokens, $configuration['line_length']);
     }
 
     #[Override]
@@ -328,7 +330,8 @@ final class LineLengthFixer extends AbstractFixer implements
 
         if ($long) {
             foreach ($this->chainsOnLine($tokens, $first, $last) as $chain) {
-                if (count($chain['calls']) >= 3
+                if ((count($chain['calls']) >= 3
+                    || $this->canBreakTwoCallChain($tokens, $chain, $last, $lineLength))
                     && $this->isSingleLine($tokens, $chain['root'], $chain['end'])) {
                     $candidates[] = [
                         'chain' => $chain,
@@ -443,6 +446,43 @@ final class LineLengthFixer extends AbstractFixer implements
         $this->joinBodyBrace($tokens, $selected['start']);
 
         return true;
+    }
+
+    /**
+     * Two calls prefer a break before the last call only when that line fits and its
+     * arguments do not already offer an array or callback to hug inside the call.
+     *
+     * @param Tokens<Token> $tokens
+     * @param array{calls: list<array{end: int, open: int, operator: int}>, root: int} $chain
+     */
+    private function canBreakTwoCallChain(
+        Tokens $tokens,
+        array $chain,
+        int $last,
+        int $lineLength,
+    ): bool {
+        if (count($chain['calls']) !== 2) {
+            return false;
+        }
+
+        $call = $chain['calls'][1];
+
+        if ($this->huggableArray($tokens, $call['open'], $call['end']) !== null) {
+            return false;
+        }
+
+        foreach (TokenLayout::topLevelTokens($tokens, $call['open'], $call['end']) as $index) {
+            if ($tokens[$index]->isGivenKind([T_FN, T_FUNCTION])) {
+                return false;
+            }
+        }
+
+        return $this->lineWidth(
+            $tokens,
+            $call['operator'],
+            $last,
+            $this->lineIndent($tokens, $chain['root']).$this->whitespacesConfig->getIndent(),
+        ) <= $lineLength;
     }
 
     /**
@@ -952,21 +992,15 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the array to break instead of the list around it: the only argument of a call, the
-     * last associative argument of a call, or the only associative item of a list, when the line
-     * fits up to the array's opening bracket.
+     * Finds an array that can open inside its surrounding list: a call's only argument or
+     * last associative argument, or the only associative item of a list.
      *
      * @param Tokens<Token> $tokens
      *
      * @return null|array{end: int, start: int}
      */
-    private function huggedArray(
-        Tokens $tokens,
-        int $first,
-        int $start,
-        int $end,
-        int $lineLength,
-    ): null|array {
+    private function huggableArray(Tokens $tokens, int $start, int $end): null|array
+    {
         $last = $tokens->getPrevMeaningfulToken($end);
 
         if ($last !== null && $tokens[$last]->equals(',')) {
@@ -1003,13 +1037,36 @@ final class LineLengthFixer extends AbstractFixer implements
             [CT::T_ARRAY_BRACKET_OPEN],
         ])
             || (! $sole && ! $call)
-            || ((! $sole || ! $call) && ! $this->isAssociative($tokens, $open, $last))
-            || ! $this->isBreakableList($tokens, $open, $last)
-            || $this->lineWidth($tokens, $first, $open) > $lineLength) {
+            || ((! $sole || ! $call) && ! $this->isAssociative($tokens, $open, $last))) {
             return null;
         }
 
         return ['end' => $last, 'start' => $open];
+    }
+
+    /**
+     * Finds the array to break instead of its surrounding list, when the line fits up to
+     * its opening bracket and it still has inline items.
+     *
+     * @param Tokens<Token> $tokens
+     *
+     * @return null|array{end: int, start: int}
+     */
+    private function huggedArray(
+        Tokens $tokens,
+        int $first,
+        int $start,
+        int $end,
+        int $lineLength,
+    ): null|array {
+        $array = $this->huggableArray($tokens, $start, $end);
+
+        if ($array === null || ! $this->isBreakableList($tokens, $array['start'], $array['end'])
+            || $this->lineWidth($tokens, $first, $array['start']) > $lineLength) {
+            return null;
+        }
+
+        return $array;
     }
 
     /**
@@ -1286,12 +1343,32 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
+     * Joins only chains whose complete projected line fits, including nested chains. A
+     * two-call chain with a wrapped head can join its tail from the closing parenthesis.
+     * After outer constructs have moved, this also removes stale inner breaks without
+     * creating long lines that would need another splitting pass.
+     *
      * @param Tokens<Token> $tokens
      */
     private function joinChains(Tokens $tokens, int $lineLength): void
     {
         $chains = $this->chains($tokens);
         $breaks = [];
+
+        foreach ($chains as $index => $chain) {
+            if (count($chain['calls']) !== 2
+                || ! $this->startsLine($tokens, $chain['calls'][0]['end'])) {
+                continue;
+            }
+
+            $end = $chain['calls'][0]['end'];
+            $chains[$index]['root'] = $end;
+            $chains[$index]['start'] = $end;
+            $chains[$index]['breaks'] = array_values(array_filter(
+                $chain['breaks'],
+                static fn (int $break): bool => $break > $end,
+            ));
+        }
 
         foreach ($chains as $chain) {
             if (! $chain['clean'] || $chain['breaks'] === []) {
@@ -1315,7 +1392,7 @@ final class LineLengthFixer extends AbstractFixer implements
             }
 
             if ($this->joinedLineWidth($tokens, $chain, $chains) <= $lineLength) {
-                array_push($breaks, ...$chain['breaks']);
+                array_push($breaks, ...array_keys($joinable));
             }
         }
 
@@ -1459,14 +1536,19 @@ final class LineLengthFixer extends AbstractFixer implements
 
     /**
      * Measures the code on the line from $first to $last, without a trailing line comment.
+     * An explicit prefix measures a proposed continuation instead of the current line.
      *
      * @param Tokens<Token> $tokens
      */
-    private function lineWidth(Tokens $tokens, int $first, int $last): int
-    {
-        $line = '';
+    private function lineWidth(
+        Tokens $tokens,
+        int $first,
+        int $last,
+        null|string $prefix = null,
+    ): int {
+        $line = $prefix ?? '';
 
-        for ($index = $first - 1; $index >= 0; --$index) {
+        for ($index = $first - 1; $prefix === null && $index >= 0; --$index) {
             $content = $tokens[$index]->getContent();
             $newline = mb_strrpos($content, "\n");
 
@@ -1672,8 +1754,9 @@ final class LineLengthFixer extends AbstractFixer implements
         $indent = $originalIndent.$this->whitespacesConfig->getIndent();
 
         foreach ($chain['calls'] as $offset => $call) {
-            // An initial static call stays on the root line.
-            if ($offset === 0 && $tokens[$call['operator']]->isGivenKind(T_DOUBLE_COLON)) {
+            // The first of two calls, or an initial static call, stays on the root line.
+            if ($offset === 0 && (count($chain['calls']) === 2
+                || $tokens[$call['operator']]->isGivenKind(T_DOUBLE_COLON))) {
                 continue;
             }
 

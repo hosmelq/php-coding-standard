@@ -133,6 +133,11 @@ if (
 ) {
 ```
 
+- Long two-call chains keep the first call on the root's line and break before
+  the last call when that continuation fits; otherwise, the last call's arguments
+  wrap. Calls that hug arrays, closures, or arrow functions keep that layout.
+  If the first call's arguments wrap, the last call attaches to its closing
+  parenthesis when that line fits.
 - Long method chains with three or more calls put each call on its own line.
 - Arguments, parameters, and arrays put each item on its own line with a
   trailing comma. A call's last associative array, or its only array, opens

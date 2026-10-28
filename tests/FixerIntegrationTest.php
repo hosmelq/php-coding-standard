@@ -278,6 +278,23 @@ it('converges for nested assertion chains and arrays', function (
             PHP,
         ["__construct(\n", "readonly string \$firstPropertyWithALongName,\n"],
     ],
+    'relocated arrow function chain' => [
+        <<<'PHP'
+            <?php
+
+            declare(strict_types=1);
+
+            it('renders registration for guests', function (): void {
+                get('/register')->assertOk()->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+                    ->component('auth/Register'));
+            });
+            PHP,
+        [
+            "    get('/register')->assertOk()->assertInertia(\n"
+                ."        fn (AssertableInertia \$page): AssertableInertia => \$page->component('auth/Register'),\n"
+                .'    );',
+        ],
+    ],
     'reindented closure body chains' => [
         <<<'PHP'
             <?php
@@ -297,6 +314,18 @@ it('converges for nested assertion chains and arrays', function (
             $config = ['short' => ['a' => 1], 'list' => [1, 2, 3], 'long' => 'value value value value value value value'];
             PHP,
         ["    'short' => ['a' => 1],\n"],
+    ],
+    'two-call route chain' => [
+        <<<'PHP'
+            <?php
+            Route::middleware('auth')->group(function (): void {
+                Route::post('invitations/{token}/accept', [InvitationController::class, 'store'])->name('invitations.accept');
+            });
+            PHP,
+        [
+            "    Route::post('invitations/{token}/accept', [InvitationController::class, 'store'])\n"
+                ."        ->name('invitations.accept');",
+        ],
     ],
     'wrapped call with a multiline array' => [
         <<<'PHP'
