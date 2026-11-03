@@ -22,6 +22,10 @@
       "email": "hosmelq@gmail.com"
     }
   ],
+  "homepage": "https://github.com/hosmelq/php-coding-standard",
+  "support": {
+    "docs": "https://github.com/hosmelq/php-coding-standard#readme"
+  },
   "require": {
     "php": "^8.4",
     "driftingly/rector-laravel": "^2.7",
