@@ -213,6 +213,7 @@ final class TokenLayout
 
         $result[] = new Token([T_WHITESPACE, $lineEnding.$indentation]);
         $result[] = $tokens[$end];
+
         $tokens->overrideRange($start, $end, $result);
     }
 

@@ -174,7 +174,6 @@ final class LineLengthFixer extends AbstractFixer implements
             }
 
             $static = $tokens->getPrevMeaningfulToken($index);
-
             $candidates[] = [
                 'chain' => null,
                 'end' => $this->expressionEnd($tokens, $arrow + 1),
@@ -248,6 +247,7 @@ final class LineLengthFixer extends AbstractFixer implements
             TokenLayout::indentation($tokens, $arrow),
             $indent,
         );
+
         $tokens->ensureWhitespaceAtIndex(
             $arrow - 1,
             1,
@@ -281,6 +281,7 @@ final class LineLengthFixer extends AbstractFixer implements
             $indent = $outer.$this->whitespacesConfig->getIndent();
 
             TokenLayout::reindent($tokens, $start, $end, $outer, $indent);
+
             $tokens->ensureWhitespaceAtIndex($close - 1, 1, $lineEnding.$outer);
 
             foreach (array_reverse($operators) as $operator) {
@@ -443,6 +444,7 @@ final class LineLengthFixer extends AbstractFixer implements
             $this->whitespacesConfig->getIndent(),
             $this->whitespacesConfig->getLineEnding(),
         );
+
         $this->joinBodyBrace($tokens, $selected['start']);
 
         return true;
@@ -1499,6 +1501,7 @@ final class LineLengthFixer extends AbstractFixer implements
                 TokenLayout::indentation($tokens, $closure['start']),
                 $this->lineIndent($tokens, $open),
             );
+
             $tokens[$gap] = new Token([T_WHITESPACE, ' ']);
 
             for ($index = $open + 1; $index < $title; ++$index) {
@@ -1767,6 +1770,7 @@ final class LineLengthFixer extends AbstractFixer implements
                 $originalIndent,
                 $indent,
             );
+
             $edits[$call['operator']] = $this->whitespacesConfig->getLineEnding().$indent;
         }
 

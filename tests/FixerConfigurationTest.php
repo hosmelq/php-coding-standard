@@ -12,6 +12,7 @@ it('shares one native ECS width while preserving fixer overrides', function (str
     $format = static function (int $width, null|int $override = null) use ($source): string {
         $builder = ECSConfig::configure()->withSets([CodingStandard::ECS_PHP]);
         $configuration = new ECSConfig();
+
         $configuration->service(
             LineLength::class,
             static fn (): LineLength => new LineLength($width),
@@ -25,6 +26,7 @@ it('shares one native ECS width while preserving fixer overrides', function (str
 
         $fixer = $configuration->make(LineLengthFixer::class);
         $tokens = Tokens::fromCode($source);
+
         $fixer->fix(new SplFileInfo('example.php'), $tokens);
 
         return $tokens->generateCode();
@@ -52,6 +54,7 @@ it('applies the shared default without explicit configuration', function (): voi
     $fixer = new ECSConfig()->make(LineLengthFixer::class);
     $source = "<?php\nrenderExample('first_long_argument_value', 'second_long_argument_value', 'third_long_argument_value', 'last_value');\n";
     $tokens = Tokens::fromCode($source);
+
     $fixer->fix(new SplFileInfo('example.php'), $tokens);
 
     expect($tokens->generateCode())->toContain("renderExample(\n");

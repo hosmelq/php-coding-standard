@@ -41,13 +41,41 @@ it('removes blank lines between consecutive variable assignments', function (
         "<?php\n\$first = 1;\n\nconsume(\$first);\n\n\$second = 2;\n",
         "<?php\n\$first = 1;\n\nconsume(\$first);\n\n\$second = 2;\n",
     ],
-    'properties and array items are not variables' => [
-        "<?php\n\$first = 1;\n\n\$this->value = 2;\n\n\$values['key'] = 3;\n\n\$second = 4;\n",
-        "<?php\n\$first = 1;\n\n\$this->value = 2;\n\n\$values['key'] = 3;\n\n\$second = 4;\n",
+    'property and array-item assignments' => [
+        "<?php\n\$first = 1;\n\n\$this->value = 2;\n\n\$values['key'] = 3;\n\n\$values[] = 4;\n\n\$second = 5;\n",
+        "<?php\n\$first = 1;\n\$this->value = 2;\n\$values['key'] = 3;\n\$values[] = 4;\n\$second = 5;\n",
+    ],
+    'static property assignments' => [
+        "<?php\nReceipt::\$markup = '<a>';\n\n\$path = '/tmp';\n",
+        "<?php\nReceipt::\$markup = '<a>';\n\$path = '/tmp';\n",
+    ],
+    'property hook bodies' => [
+        "<?php\nclass Example\n{\n    public int \$value {\n        set(int \$value) {\n            \$first = 1;\n\n            \$second = 2;\n        }\n    }\n}\n",
+        "<?php\nclass Example\n{\n    public int \$value {\n        set(int \$value) {\n            \$first = 1;\n            \$second = 2;\n        }\n    }\n}\n",
+    ],
+    'dynamic variable names' => [
+        "<?php\n\${'first'} = 1;\n\n\${'second'} = 2;\n",
+        "<?php\n\${'first'} = 1;\n\${'second'} = 2;\n",
+    ],
+    'method calls are not assignments' => [
+        "<?php\n\$first = 1;\n\n\$this->consume(\$first);\n\n\$second = 2;\n",
+        "<?php\n\$first = 1;\n\n\$this->consume(\$first);\n\n\$second = 2;\n",
     ],
     'comparisons are not assignments' => [
         "<?php\n\$first = 1;\n\n\$first === 1;\n",
         "<?php\n\$first = 1;\n\n\$first === 1;\n",
+    ],
+    'case labels' => [
+        "<?php\nswitch (\$mode) {\n    case 1:\n        \$first = 1;\n\n        \$second = 2;\n}\n",
+        "<?php\nswitch (\$mode) {\n    case 1:\n        \$first = 1;\n        \$second = 2;\n}\n",
+    ],
+    'multiline assignments in for headers are untouched' => [
+        "<?php\nfor (\n    \$first = 1;\n\n    \$second = 2;\n\n    \$third += 1\n) {}\n",
+        "<?php\nfor (\n    \$first = 1;\n\n    \$second = 2;\n\n    \$third += 1\n) {}\n",
+    ],
+    'closure assignments in for headers are untouched' => [
+        "<?php\nfor (\$callback = function () {\n    \$first = 1;\n\n    \$second = 2;\n};\n\n    \$condition = false;\n    \$step += 1\n) {}\n",
+        "<?php\nfor (\$callback = function () {\n    \$first = 1;\n\n    \$second = 2;\n};\n\n    \$condition = false;\n    \$step += 1\n) {}\n",
     ],
     'for headers are untouched' => [
         "<?php\nfor (\$index = 0; \$index < 3; ++\$index) {\n}\n",
@@ -57,6 +85,7 @@ it('removes blank lines between consecutive variable assignments', function (
 
 it('uses the configured line ending', function (): void {
     $fixer = new NoBlankLineBetweenAssignmentsFixer();
+
     $fixer->setWhitespacesConfig(new WhitespacesFixerConfig("\t", "\r\n"));
 
     $tokens = Tokens::fromCode("<?php\r\n\t\$first = 1;\r\n\r\n\t\$second = 2;\r\n");

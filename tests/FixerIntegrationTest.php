@@ -12,6 +12,7 @@ function configurationFixture(string $name, string $source, string $configuratio
 
     $sourcePath = $directory.'/example.php';
     $configurationPath = $directory.'/configuration.php';
+
     file_put_contents($sourcePath, $source);
     file_put_contents($configurationPath, $configuration);
 
@@ -28,10 +29,12 @@ it('converges for nested assertion chains and arrays', function (
         use Symplify\EasyCodingStandard\Config\ECSConfig;
         return ECSConfig::configure()->withSets([CodingStandard::ECS_PHP]);
         PHP_WRAP;
+
     [$file, $config] = configurationFixture('nested', $source, $configuration);
+
     $result = runConfiguredTool(
         'ecs',
-        ['check', $file, '--config', $config, '--fix', '--no-progress-bar'],
+        ['check', $file, '--config', $config, '--fix', '--clear-cache', '--no-progress-bar'],
     );
     $formatted = file_get_contents($file);
 
@@ -42,11 +45,102 @@ it('converges for nested assertion chains and arrays', function (
         expect($formatted)->toContain($snippet);
     }
 
-    $result = runConfiguredTool('ecs', ['check', $file, '--config', $config, '--no-progress-bar']);
+    $result = runConfiguredTool(
+        'ecs',
+        ['check', $file, '--config', $config, '--clear-cache', '--no-progress-bar'],
+    );
 
     expect($result->isSuccessful())->toBeTrue($result->getOutput().$result->getErrorOutput())
         ->and(file_get_contents($file))->toBe($formatted);
 })->with([
+    'subject groups after splitting bracing and wrapping' => [
+        <<<'PHP'
+            <?php
+            it('formats statement subjects', function (): void {
+                $file = new SplFileInfo('a.php'); new Foo()->fix($file); new Bar()->fix($file);
+                $tokens->clearEmptyTokens(); $tokens->rewind();
+                $this->assertTrue($tokens->isEmpty());
+                Event::fake(); Mail::fake();
+                actingAs($user); expect($tokens)->toBeEmpty();
+                if ($enabled) consume();
+                new Formatter()->first('first argument value')->second('second argument value')->third('third argument value');
+                $tokens->setOptions('first_long_argument_value', 'second_long_argument_value', 'third_long_argument_value');
+                consumeWithConfiguredDestination('first_long_argument_value', 'second_long_argument_value', 'third_long_argument_value');
+                Event::fake();
+            });
+            PHP,
+        [
+            "    \$file = new SplFileInfo('a.php');\n\n    new Foo()->fix(\$file);\n    new Bar()->fix(\$file);\n\n",
+            "    \$tokens->clearEmptyTokens();\n    \$tokens->rewind();\n\n    \$this->assertTrue(\$tokens->isEmpty());\n\n",
+            "    Event::fake();\n    Mail::fake();\n\n    actingAs(\$user);\n    expect(\$tokens)->toBeEmpty();",
+            "    }\n    new Formatter()\n",
+            "        ->third('third argument value');\n\n    \$tokens->setOptions(\n",
+            "    );\n\n    consumeWithConfiguredDestination(\n",
+            "    );\n\n    Event::fake();",
+        ],
+    ],
+    'subjects in switch match heredoc and alternative syntax' => [
+        <<<'PHP'
+            <?php
+            namespace App;
+            use App\Example;
+            declare(ticks=1);
+            switch ($mode) {
+                case $enabled ? 1 : 2:
+                    Event::fake(); consume();
+                    break;
+                default:
+                    new Example(); $tokens->rewind();
+            }
+            $value = match ($mode) { 1 => new Example(), default => $tokens->current() };
+            consume($value);
+            $message = <<<'TEXT'
+            unchanged text
+            TEXT;
+            $tokens->setMessage($message);
+            if ($enabled):
+                Event::fake(); consume();
+            else:
+                new Example(); $tokens->rewind();
+            endif;
+            for ($first = 1; $second = 2; $third += 1) {
+                Event::fake(); consume();
+            }
+            PHP,
+        [
+            "        Event::fake();\n\n        consume();",
+            '$value = match ($mode) {',
+            "};\n\nconsume(\$value);\n\n\$message = <<<'TEXT'",
+            "TEXT;\n\n\$tokens->setMessage(\$message);",
+            "for (\$first = 1; \$second = 2; \$third += 1) {\n    Event::fake();\n\n    consume();\n}",
+        ],
+    ],
+    'subject groups with CRLF input' => [
+        "<?php\r\n\$value = 1; new Foo(); new Bar();\r\n\$tokens->rewind();\r\nconsume(\$value);\r\nEvent::fake(); Mail::fake();\r\n",
+        [
+            "\$value = 1;\n\nnew Foo();\nnew Bar();\n\n\$tokens->rewind();\n\nconsume(\$value);\n\nEvent::fake();\nMail::fake();",
+        ],
+    ],
+    'assignment boundaries after splitting and bracing' => [
+        <<<'PHP'
+            <?php
+            it('formats assignment groups', function (): int {
+                $translator = app(Translator::class); expect(Lang::getFacadeRoot())->toBe($translator); $message = app(Catalog::class)->all()['messages'][0];
+                $generator = new ClassMapGenerator(); $generator->avoidDuplicateScans();
+                if ($enabled) consume();
+                $value = calculate();
+                return normalize($value);
+            });
+            PHP,
+        [
+            "    \$translator = app(Translator::class);\n\n"
+                ."    expect(Lang::getFacadeRoot())->toBe(\$translator);\n\n"
+                ."    \$message = app(Catalog::class)->all()['messages'][0];\n"
+                ."    \$generator = new ClassMapGenerator();\n\n"
+                ."    \$generator->avoidDuplicateScans();\n",
+            "    }\n\n    \$value = calculate();\n\n    return normalize(\$value);",
+        ],
+    ],
     'arrow function argument reaching the width with its trailing comma' => [
         <<<'PHP'
             <?php
@@ -167,7 +261,7 @@ it('converges for nested assertion chains and arrays', function (
         [
             "    \$owner = Owner::factory()->createOne();\n"
                 ."    \$address = \$owner->addresses()->create(['label' => 'Home']);\n\n"
-                ."    OwnerContact::factory()->for(\$owner)->createOne(['is_default' => false]);\n"
+                ."    OwnerContact::factory()->for(\$owner)->createOne(['is_default' => false]);\n\n"
                 ."    \$defaultAddress = OwnerContact::factory()->for(\$owner)->createOne(['is_default' => true]);\n",
         ],
     ],

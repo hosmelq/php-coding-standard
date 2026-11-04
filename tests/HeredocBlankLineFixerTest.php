@@ -34,8 +34,11 @@ it('lets heredoc indentation converge in one run', function (): void {
     $source = "<?php\n\$value = [\n    <<<'PHP'\n    <?php\n    \n    declare(strict_types=1);\n    PHP,\n];\n";
     $format = static function (string $code): string {
         $tokens = Tokens::fromCode($code);
+
         new HeredocIndentationFixer()->fix(new SplFileInfo('example.php'), $tokens);
+
         $tokens->clearEmptyTokens();
+
         new HeredocBlankLineFixer()->fix(new SplFileInfo('example.php'), $tokens);
 
         return $tokens->generateCode();

@@ -31,9 +31,11 @@ function significantTokens(string $code): array
 function formatLines(string $code, int $lineLength = 100): string
 {
     $fixer = new LineLengthFixer();
+
     $fixer->configure(['line_length' => $lineLength]);
 
     $tokens = Tokens::fromCode($code);
+
     $fixer->fix(new SplFileInfo('example.php'), $tokens);
 
     return $tokens->generateCode();
@@ -41,6 +43,7 @@ function formatLines(string $code, int $lineLength = 100): string
 
 it('formats fixtures idempotently without changing code', function (string $fixture): void {
     [$input, $expected] = array_pad(explode("\n-----\n", file_get_contents($fixture), 2), 2, null);
+
     $expected ??= $input;
     $output = formatLines($input);
 
@@ -153,10 +156,12 @@ it('uses configured indentation and line endings', function (
     string $expected,
 ): void {
     $fixer = new LineLengthFixer();
+
     $fixer->configure(['line_length' => 80]);
     $fixer->setWhitespacesConfig(new WhitespacesFixerConfig("\t", "\r\n"));
 
     $tokens = Tokens::fromCode($input);
+
     $fixer->fix(new SplFileInfo('example.php'), $tokens);
 
     expect($tokens->generateCode())->toBe($expected);
@@ -308,6 +313,7 @@ it('converges with the complete shared ECS set', function (
         PHP_WRAP;
     $config = $directory.'/ecs.php';
     $file = $directory.'/example.php';
+
     file_put_contents($config, $configuration);
     file_put_contents($file, "<?php\n\ndeclare(strict_types=1);\n\n".$expression."\n");
 

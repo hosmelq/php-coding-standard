@@ -147,7 +147,12 @@ if (
 - Lists with `//` comments between items put each item on its own line.
 - Test calls such as `it('title', function () {})` keep their title and closure
   on one line.
-- Blank lines between consecutive variable assignments are removed.
+- Blank lines between consecutive assignments to variables, their properties,
+  or their array items are removed.
+- Consecutive statements are grouped by subject: assignments, `new` expressions,
+  statements starting with the same variable, static calls, and function calls.
+  Different subjects are separated by a blank line; assignments are also separated
+  from other statements.
 
 Strings, comments, comparisons, and long test titles can stay longer than the
 line length.
