@@ -139,6 +139,11 @@ if (
   If the first call's arguments wrap, the last call attaches to its closing
   parenthesis when that line fits.
 - Long method chains with three or more calls put each call on its own line.
+- Long chains of three or more calls that were split by hand with several calls
+  on a line get the same layout as single-line chains. Chains with one call per
+  line or that form an arrow function's body keep their layout, and long Pest
+  `expect()` chains keep their manual `->and()` grouping.
+- A property before a call stays on that call's line, as in `->each->delete()`.
 - Arguments, parameters, and arrays put each item on its own line with a
   trailing comma. A call's last associative array, or its only array, opens
   inside the call.

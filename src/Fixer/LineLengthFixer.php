@@ -100,7 +100,8 @@ final class LineLengthFixer extends AbstractFixer implements
         }
 
         $this->joinTestCalls($tokens);
-        $this->joinChains($tokens, $configuration['line_length']);
+        $this->joinChains($tokens, $configuration['line_length'], false);
+        $this->joinChains($tokens, $configuration['line_length'], true);
 
         // Keep block comments next to the argument they describe.
         foreach (array_keys($tokens->findGivenKind(T_COMMENT)) as $index) {
@@ -130,7 +131,7 @@ final class LineLengthFixer extends AbstractFixer implements
             }
         }
 
-        $this->joinChains($tokens, $configuration['line_length']);
+        $this->joinChains($tokens, $configuration['line_length'], false);
     }
 
     #[Override]
@@ -455,7 +456,7 @@ final class LineLengthFixer extends AbstractFixer implements
      * arguments do not already offer an array or callback to hug inside the call.
      *
      * @param Tokens<Token> $tokens
-     * @param array{calls: list<array{end: int, open: int, operator: int}>, root: int} $chain
+     * @param array{calls: list<array{end: int, open: int, operator: int}>, members: list<int>, root: int} $chain
      */
     private function canBreakTwoCallChain(
         Tokens $tokens,
@@ -481,7 +482,7 @@ final class LineLengthFixer extends AbstractFixer implements
 
         return $this->lineWidth(
             $tokens,
-            $call['operator'],
+            $this->segmentStart($chain['members'], $chain['calls'][0]),
             $last,
             $this->lineIndent($tokens, $chain['root']).$this->whitespacesConfig->getIndent(),
         ) <= $lineLength;
@@ -1073,6 +1074,20 @@ final class LineLengthFixer extends AbstractFixer implements
 
     /**
      * @param Tokens<Token> $tokens
+     * @param array{end: int, start: int} $chain
+     * @param array<int, int> $arrows
+     */
+    private function isArrowBody(Tokens $tokens, array $chain, array $arrows): bool
+    {
+        return array_any(
+            $arrows,
+            fn (int $end, int $arrow): bool => $arrow < $chain['start'] && $chain['end'] <= $end
+                && ! str_contains($tokens->generatePartialCode($arrow, $chain['start']), "\n"),
+        );
+    }
+
+    /**
+     * @param Tokens<Token> $tokens
      */
     private function isAssociative(Tokens $tokens, int $start, int $end): bool
     {
@@ -1116,6 +1131,32 @@ final class LineLengthFixer extends AbstractFixer implements
         }
 
         return $inline;
+    }
+
+    /**
+     * @param Tokens<Token> $tokens
+     */
+    private function isExpectation(Tokens $tokens, int $start): bool
+    {
+        if (! $tokens[$start]->isGivenKind(T_STRING)
+            || mb_strtolower($tokens[$start]->getContent()) !== 'expect') {
+            return false;
+        }
+
+        $before = $tokens->getPrevMeaningfulToken($start);
+
+        if ($before !== null && $tokens[$before]->isGivenKind(T_NS_SEPARATOR)) {
+            $before = $tokens->getPrevMeaningfulToken($before);
+
+            if ($before !== null
+                && $tokens[$before]->isGivenKind([CT::T_NAMESPACE_OPERATOR, T_STRING])) {
+                return false;
+            }
+        }
+
+        return $before === null
+            || (! $this->isOperator($tokens[$before])
+                && ! $tokens[$before]->isGivenKind([T_FUNCTION, T_NEW]));
     }
 
     private function isExpressionDelimiter(Token $token): bool
@@ -1352,10 +1393,23 @@ final class LineLengthFixer extends AbstractFixer implements
      *
      * @param Tokens<Token> $tokens
      */
-    private function joinChains(Tokens $tokens, int $lineLength): void
+    private function joinChains(Tokens $tokens, int $lineLength, bool $rejoinLong): void
     {
         $chains = $this->chains($tokens);
         $breaks = [];
+        $arrows = [];
+
+        foreach (array_keys($tokens->findGivenKind(T_FN)) as $fn) {
+            $open = $tokens->getNextTokenOfKind($fn, ['(']);
+            $arrow = $open === null ? null : $tokens->getNextTokenOfKind(
+                $tokens->findBlockEnd(Tokens::BLOCK_TYPE_PARENTHESIS, $open),
+                [[T_DOUBLE_ARROW]],
+            );
+
+            if ($arrow !== null) {
+                $arrows[$arrow] = $this->expressionEnd($tokens, $arrow + 1);
+            }
+        }
 
         foreach ($chains as $index => $chain) {
             if (count($chain['calls']) !== 2
@@ -1393,7 +1447,20 @@ final class LineLengthFixer extends AbstractFixer implements
                 }
             }
 
-            if ($this->joinedLineWidth($tokens, $chain, $chains) <= $lineLength) {
+            $rejoin = $rejoinLong
+                && count($chain['calls']) >= 3
+                && ! $this->isArrowBody($tokens, $chain, $arrows)
+                && ! $this->isExpectation($tokens, $chain['start'])
+                && $this->sharesCallLine($tokens, $chain);
+
+            foreach ($chains as $other) {
+                if ($other['breaks'] !== []
+                    && ($this->contains($chain, $other) || $this->contains($other, $chain))) {
+                    $rejoin = false;
+                }
+            }
+
+            if ($rejoin || $this->joinedLineWidth($tokens, $chain, $chains) <= $lineLength) {
                 array_push($breaks, ...array_keys($joinable));
             }
         }
@@ -1725,8 +1792,36 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
+     * @param list<int> $members
+     * @param array{end: int, open: int, operator: int} $previous
+     */
+    private function segmentStart(array $members, array $previous): int
+    {
+        foreach ($members as $member) {
+            if ($member > $previous['end']) {
+                return $member;
+            }
+        }
+
+        return $previous['end'];
+    }
+
+    /**
      * @param Tokens<Token> $tokens
-     * @param array{calls: list<array{end: int, open: int, operator: int}>, root: int} $chain
+     * @param array{calls: list<array{end: int, open: int, operator: int}>, members: list<int>, root: int} $chain
+     */
+    private function sharesCallLine(Tokens $tokens, array $chain): bool
+    {
+        return array_any(
+            array_slice($chain['calls'], 0, -1),
+            fn (array $previous): bool
+                => ! $this->startsLine($tokens, $this->segmentStart($chain['members'], $previous)),
+        );
+    }
+
+    /**
+     * @param Tokens<Token> $tokens
+     * @param array{calls: list<array{end: int, open: int, operator: int}>, members: list<int>, root: int} $chain
      */
     private function splitChain(Tokens $tokens, array $chain): void
     {
@@ -1771,7 +1866,10 @@ final class LineLengthFixer extends AbstractFixer implements
                 $indent,
             );
 
-            $edits[$call['operator']] = $this->whitespacesConfig->getLineEnding().$indent;
+            $start = $offset === 0
+                ? $call['operator']
+                : $this->segmentStart($chain['members'], $chain['calls'][$offset - 1]);
+            $edits[$start] = $this->whitespacesConfig->getLineEnding().$indent;
         }
 
         krsort($edits);
