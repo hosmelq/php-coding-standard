@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## v1.5.0 - 2026-11-10
 
 - Lay out long method chains of three or more calls that were split by hand with several calls on a line the same way as single-line chains. Chains with one call per line or that form an arrow function's body keep their layout, and long Pest `expect()` chains keep their manual `->and()` grouping.
 - Keep a property before a call on that call's line when splitting a chain, as in `->each->delete()`.
