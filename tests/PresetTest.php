@@ -118,3 +118,45 @@ it('keeps untyped container parameters in service providers', function (): void 
 
     expect($result->getOutput())->not->toContain('array $app');
 });
+
+it('leaves consecutive assignments to ECS', function (): void {
+    $source = <<<'PHP'
+        <?php
+
+        declare(strict_types=1);
+
+        function label(string $value): string
+        {
+            $label = trim($value);
+            $label = strtoupper($label);
+            $suffix = '!';
+
+            return $label.$suffix;
+        }
+        PHP;
+    $directory = presetFixture('rector-php', [
+        'label.php' => $source,
+        'rector.php' => <<<'CONFIG'
+            <?php
+
+            declare(strict_types=1);
+
+            use HosmelQ\PhpCodingStandard\CodingStandard;
+            use Rector\Config\RectorConfig;
+
+            return RectorConfig::configure()->withSets([CodingStandard::RECTOR_PHP]);
+            CONFIG,
+    ]);
+    $result = runConfiguredTool('rector', [
+        'process',
+        $directory.'/label.php',
+        '--config',
+        $directory.'/rector.php',
+        '--dry-run',
+        '--no-progress-bar',
+        '--output-format',
+        'json',
+    ]);
+
+    expect($result->getOutput())->not->toContain('NewlineBeforeNewAssignSetRector');
+});
