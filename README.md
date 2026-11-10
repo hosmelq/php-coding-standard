@@ -24,6 +24,11 @@ Laravel packages and applications require it themselves:
 composer require --dev larastan/larastan
 ```
 
+It also includes [Laravel PAO](https://github.com/laravel/pao), which gives AI
+agents compact JSON output from PHPStan, Rector, Pest, PHPUnit, and Paratest.
+It only activates when an agent runs the tools. Set `PAO_DISABLE=1` to turn it
+off.
+
 ## Choose a preset
 
 Use the same row in every tool:

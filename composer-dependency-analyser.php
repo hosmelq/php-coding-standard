@@ -11,6 +11,7 @@ return (new Configuration())
     ->ignoreErrors([ErrorType::SHADOW_DEPENDENCY])
     ->ignoreErrorsOnPackage('pestphp/pest-plugin-rector', [ErrorType::DEV_DEPENDENCY_IN_PROD])
     ->ignoreErrorsOnPackages([
+        'laravel/pao',
         'nesbot/carbon',
         'phpstan/extension-installer',
         'phpstan/phpstan',
