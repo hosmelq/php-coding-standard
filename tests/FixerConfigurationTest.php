@@ -32,9 +32,9 @@ it('shares one native ECS width while preserving fixer overrides', function (str
         return $tokens->generateCode();
     };
 
-    expect($format(100))->not->toBe($source);
-    expect($format(200))->toBe($source);
-    expect($format(200, 100))->toBe($format(100));
+    expect($format(100))->not->toBe($source)
+        ->and($format(200))->toBe($source)
+        ->and($format(200, 100))->toBe($format(100));
 })->with([
     'arrays' => "<?php\n\$values = ['first_long_option' => 'first_long_value', 'second_long_option' => 'second_long_value', 'third' => true];\n",
     'arrow lists' => "<?php\n\$callbacks = [fn (\$customer) => \$customer->billingAddress, fn (\$customer) => \$customer->preferredLanguage];\n",

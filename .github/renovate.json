@@ -1,7 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "zizmorcore/zizmor",
+      "extractVersionTemplate": "^v(?<version>.+)$",
+      "managerFilePatterns": [".github/workflows/zizmor.yml"],
+      "matchStrings": ["version: (?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"]
+    }
+  ],
   "dependencyDashboard": true,
-  "extends": ["config:recommended", "group:all", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["composer", "custom.regex", "github-actions"],
+  "extends": [
+    "config:recommended",
+    "group:all",
+    "helpers:pinGitHubActionDigests",
+    "schedule:weekly"
+  ],
+  "includePaths": [".github/workflows/**", "composer.json"],
+  "minimumReleaseAge": "1 day",
   "packageRules": [
     {
       "matchDepNames": ["pullfrog/pullfrog"],
@@ -9,16 +27,18 @@
       "pinDigests": false
     },
     {
-      "matchManagers": ["composer"],
-      "postUpdateOptions": ["composerWithAll"],
-      "rangeStrategy": "replace"
+      "enabled": false,
+      "matchDepNames": ["php"],
+      "matchManagers": ["composer"]
     },
     {
-      "matchDepNames": ["php"],
       "matchManagers": ["composer"],
-      "rangeStrategy": "widen"
+      "postUpdateOptions": ["composerWithAll"],
+      "rangeStrategy": "bump"
     }
   ],
   "rebaseWhen": "conflicted",
-  "semanticCommits": "enabled"
+  "semanticCommits": "enabled",
+  "timezone": "America/Managua",
+  "updateNotScheduled": false
 }

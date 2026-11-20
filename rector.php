@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use HosmelQ\PhpCodingStandard\CodingStandard;
+use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
-    ->withSets([CodingStandard::RECTOR_PHP])
-    ->withPaths([__DIR__.'/src', __DIR__.'/tests'])
-    ->withSkip([__DIR__.'/tests/Fixtures'])
-    ->withCache(__DIR__.'/.cache/rector');
+    ->withCache('./.cache/rector', FileCacheStorage::class)
+    ->withPaths([
+        __DIR__.'/src',
+        __DIR__.'/tests',
+    ])
+    ->withSets([CodingStandard::RECTOR_PEST, CodingStandard::RECTOR_PHP]);

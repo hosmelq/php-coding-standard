@@ -1,8 +1,8 @@
-name: Continuous Integration
+name: Continuous integration
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 concurrency:
@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  check-code-quality:
-    name: Check code quality
+  quality:
+    name: Quality checks
 
     runs-on: ubuntu-latest
 
@@ -23,75 +23,32 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Set up PHP
+        uses: hosmelq/.github/.github/actions/php-setup@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
+        with:
+          php-tools: cs2pr
+          php-version: '8.4'
+        env:
+          fail-fast: true
+
+      - name: Install composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Check composer
+        run: composer normalize --dry-run
 
       - name: Check code quality
-        uses: hosmelq/.github/.github/actions/php-rector-check@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
-        with:
-          php-version: '8.4'
-
-  check-code-style:
-    name: Check code style
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
+        run: vendor/bin/rector --ansi --dry-run
 
       - name: Check code style
-        uses: hosmelq/.github/.github/actions/php-ecs-check@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
-        with:
-          php-version: '8.4'
-
-  check-composer:
-    name: Check composer
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: Check composer normalize
-        uses: hosmelq/.github/.github/actions/composer-normalize-check@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
-        with:
-          php-version: '8.4'
-
-  check-static-code:
-    name: Check static code
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
+        run: vendor/bin/ecs check
 
       - name: Check static code
-        uses: hosmelq/.github/.github/actions/phpstan-check@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
-        with:
-          php-version: '8.4'
-
-  check-unused-composer-dependencies:
-    name: Check unused composer dependencies
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
+        run: composer phpstan
 
       - name: Check unused composer dependencies
-        uses: hosmelq/.github/.github/actions/composer-unused-dependencies-check@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
-        with:
-          php-version: '8.4'
+        run: vendor/bin/composer-dependency-analyser
 
   tests:
     name: PHP ${{ matrix.php }} (${{ matrix.dependencies }})
@@ -105,7 +62,7 @@ jobs:
         include:
           - dependencies: prefer-lowest
             php: '8.4'
-        php: ['8.4', '8.5']
+        php: ['8.4', '8.5', '8.6']
 
     steps:
       - name: Checkout
@@ -116,7 +73,10 @@ jobs:
       - name: Set up PHP
         uses: hosmelq/.github/.github/actions/php-setup@32f4a95b53649f1634b195193a61bb56a6b26d50 # main
         with:
+          php-tools: cs2pr
           php-version: ${{ matrix.php }}
+        env:
+          fail-fast: true
 
       - name: Install composer dependencies
         env:

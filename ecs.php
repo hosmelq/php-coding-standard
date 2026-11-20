@@ -6,14 +6,7 @@ use HosmelQ\PhpCodingStandard\CodingStandard;
 use Symplify\EasyCodingStandard\Config\ECSConfig;
 
 return ECSConfig::configure()
-    ->withSets([CodingStandard::ECS_PHP])
-    ->withPaths([
-        __DIR__.'/composer-dependency-analyser.php',
-        __DIR__.'/config',
-        __FILE__,
-        __DIR__.'/rector.php',
-        __DIR__.'/src',
-        __DIR__.'/tests',
-    ])
-    ->withSkip([__DIR__.'/tests/Fixtures'])
-    ->withCache(__DIR__.'/.cache/ecs');
+    ->withCache('./.cache/ecs')
+    ->withPaths([__DIR__.'/config', __DIR__.'/src', __DIR__.'/tests'])
+    ->withRootFiles()
+    ->withSets([CodingStandard::ECS_PHP]);
