@@ -18,7 +18,6 @@ return new Configuration()
         'phpstan/phpstan-strict-rules',
         'spaze/phpstan-disallowed-calls',
         'thecodingmachine/phpstan-safe-rule',
-        'thecodingmachine/safe',
         'ticketswap/phpstan-error-formatter',
         'tomasvotruba/type-coverage',
     ], [ErrorType::UNUSED_DEPENDENCY]);

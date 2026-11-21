@@ -54,7 +54,6 @@ final class BlankLineBetweenStatementGroupsFixer extends AbstractFixer implement
     #[Override]
     public function getPriority(): int
     {
-        // LineLengthFixer can split statements after a closing brace; separate them afterwards.
         return -44;
     }
 

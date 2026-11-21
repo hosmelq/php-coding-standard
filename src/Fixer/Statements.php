@@ -87,7 +87,6 @@ final class Statements
                 $open = $tokens->getNextMeaningfulToken($index);
 
                 if ($open !== null && $tokens[$open]->equals('(')) {
-                    // Exclude even executable bodies nested inside a for header.
                     $forEnd = $tokens->findBlockEnd(Tokens::BLOCK_TYPE_PARENTHESIS, $open);
                 }
 
@@ -126,8 +125,6 @@ final class Statements
     }
 
     /**
-     * Class and match bodies contain declarations or expressions; function bodies contain statements.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return array<int, bool>
@@ -233,8 +230,6 @@ final class Statements
     }
 
     /**
-     * Classify statements such as `$$name = 1;` and `${'name'}->run();`.
-     *
      * @param Tokens<Token> $tokens
      */
     private static function dynamicVariableSubject(Tokens $tokens, int $start): null|string
@@ -427,8 +422,6 @@ final class Statements
     }
 
     /**
-     * Skip the calls, array offsets, and properties of the assigned variable.
-     *
      * @param Tokens<Token> $tokens
      */
     private static function targetEnd(Tokens $tokens, int $variable): int
@@ -477,8 +470,6 @@ final class Statements
     }
 
     /**
-     * Find the end of a variable name such as `$name`, `$$name`, or `${'name'}`.
-     *
      * @param Tokens<Token> $tokens
      */
     private static function variableEnd(Tokens $tokens, int $index): null|int

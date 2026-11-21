@@ -23,10 +23,6 @@ use PhpCsFixer\Tokenizer\Tokens;
 use SplFileInfo;
 
 /**
- * Lays out code by line width in a single run. Chains that fit are joined first. Then each
- * line that is too long breaks its outermost construct, and the lines below it are measured
- * with their final indentation. Relocated chains are joined at their final positions.
- *
  * @implements ConfigurableFixerInterface<array{line_length?: int}, array{line_length: int}>
  */
 final class LineLengthFixer extends AbstractFixer implements
@@ -36,9 +32,6 @@ final class LineLengthFixer extends AbstractFixer implements
     /** @use ConfigurableFixerTrait<array{line_length?: int}, array{line_length: int}> */
     use ConfigurableFixerTrait;
 
-    /**
-     * The or, xor, and, ternary, ??, ||, && and concatenation precedences.
-     */
     private const array BREAKABLE_PRECEDENCES = [1, 2, 3, 4, 5, 6, 7, 12];
 
     public function __construct(private readonly LineLength $lineLength = new LineLength())
@@ -70,7 +63,6 @@ final class LineLengthFixer extends AbstractFixer implements
     #[Override]
     public function getPriority(): int
     {
-        // Measure after every fixer that changes code on a line, so the widths are final.
         return -43;
     }
 
@@ -103,7 +95,6 @@ final class LineLengthFixer extends AbstractFixer implements
         $this->joinChains($tokens, $configuration['line_length'], false);
         $this->joinChains($tokens, $configuration['line_length'], true);
 
-        // Keep block comments next to the argument they describe.
         foreach (array_keys($tokens->findGivenKind(T_COMMENT)) as $index) {
             $open = $this->enclosingParenthesis($tokens, $index);
 
@@ -125,7 +116,6 @@ final class LineLengthFixer extends AbstractFixer implements
                 ++$last;
             }
 
-            // A broken line is measured again, so it can break its next construct.
             if (! $this->breakLine($tokens, $first, $last, $configuration['line_length'])) {
                 $first = $last + 1;
             }
@@ -149,8 +139,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the arrow functions whose arrow is on the line, after code on the same line.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return list<array{chain: null, end: int, kind: 'arrow', start: int}>
@@ -207,9 +195,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Puts an arrow function's body on the next line, starting with the arrow. When the
-     * parameters alone are too long, they break instead and the body stays after them.
-     *
      * @param Tokens<Token> $tokens
      */
     private function breakArrowFunction(Tokens $tokens, int $start, int $end, int $lineLength): void
@@ -257,10 +242,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Puts each operator of the expression's lowest precedence at the start of a line. An
-     * expression that fills a condition or grouping parentheses also moves onto its own lines,
-     * with the closing parenthesis on the last one, as PSR-12 lays out conditions.
-     *
      * @param Tokens<Token> $tokens
      */
     private function breakExpression(Tokens $tokens, int $start, int $end): void
@@ -297,7 +278,6 @@ final class LineLengthFixer extends AbstractFixer implements
         $indent = $this->lineIndent($tokens, $start).$this->whitespacesConfig->getIndent();
         $operands = [...$operators, $end + 1];
 
-        // Indent every operand before the line breaks move the indexes.
         foreach ($operators as $position => $operator) {
             if (! $this->startsLine($tokens, $operator)) {
                 TokenLayout::reindent(
@@ -318,11 +298,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Breaks one construct that starts on the line, when the line is too long or holds an
-     * associative array with inline items around a multiline value. The outermost construct
-     * breaks first, and of outermost siblings the last one, so a short call before a long one
-     * keeps its arguments inline.
-     *
      * @param Tokens<Token> $tokens
      */
     private function breakLine(Tokens $tokens, int $first, int $last, int $lineLength): bool
@@ -348,8 +323,6 @@ final class LineLengthFixer extends AbstractFixer implements
         for ($index = $first; $index <= $last; ++$index) {
             $end = $this->listEnd($tokens, $index);
 
-            // A line that fits only breaks lists that continue onto later lines with a line
-            // comment, or associative arrays with a multiline value.
             if ($end === null
                 || (! $long && ($end <= $last
                     || (! $this->hasLineComment($tokens, $index, $end)
@@ -370,7 +343,6 @@ final class LineLengthFixer extends AbstractFixer implements
             );
         }
 
-        // A test's arrow function stays on the test's line, like its title.
         for ($index = $first; $index <= $last; ++$index) {
             $closure = $tokens[$index]->equals('(') ? $this->testClosure($tokens, $index) : null;
 
@@ -452,9 +424,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Two calls prefer a break before the last call only when that line fits and its
-     * arguments do not already offer an array or callback to hug inside the call.
-     *
      * @param Tokens<Token> $tokens
      * @param array{calls: list<array{end: int, open: int, operator: int}>, members: list<int>, root: int} $chain
      */
@@ -620,8 +589,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the chains whose root is on the line, outside strings.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return list<array{
@@ -712,9 +679,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the end of the expression that starts at $index: the last token before a comma,
-     * semicolon, arrow, assignment, closing bracket or a colon that no ternary opened.
-     *
      * @param Tokens<Token> $tokens
      */
     private function expressionEnd(Tokens $tokens, int $index): int
@@ -784,8 +748,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the expressions with an operator on the line that can break.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return list<array{chain: null, end: int, kind: 'expression', start: int}>
@@ -840,8 +802,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the start of the expression around the operator at $index.
-     *
      * @param Tokens<Token> $tokens
      */
     private function expressionStart(Tokens $tokens, int $index): int
@@ -877,7 +837,6 @@ final class LineLengthFixer extends AbstractFixer implements
 
             $block = Tokens::detectBlockType($token);
 
-            // Braces that close a statement block end the search, unlike parentheses and brackets.
             if ($block !== null) {
                 if ($block['isStart'] || $block['type'] === Tokens::BLOCK_TYPE_BRACE) {
                     break;
@@ -912,9 +871,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the part of the expression to break: the expression itself, or, when its lowest
-     * operators already start lines, its operand on the line.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return null|array{end: int, start: int}
@@ -970,7 +926,6 @@ final class LineLengthFixer extends AbstractFixer implements
         }
 
         foreach (TokenLayout::topLevelTokens($tokens, $start, $end) as $item) {
-            // Heredocs and multiline strings keep their layout.
             if (! $tokens[$item]->isWhitespace()
                 && str_contains($tokens[$item]->getContent(), "\n")) {
                 return false;
@@ -982,8 +937,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Whether the list has a line comment between its items, which puts it on several lines.
-     *
      * @param Tokens<Token> $tokens
      */
     private function hasLineComment(Tokens $tokens, int $start, int $end): bool
@@ -995,9 +948,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds an array that can open inside its surrounding list: a call's only argument or
-     * last associative argument, or the only associative item of a list.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return null|array{end: int, start: int}
@@ -1030,7 +980,6 @@ final class LineLengthFixer extends AbstractFixer implements
             $itemStart = $tokens->getPrevMeaningfulToken($itemStart);
         }
 
-        // Positional arrays stay compact unless they are a call's only argument.
         $sole = $itemStart === $start;
         $call = $tokens[$start]->equals('(') && ! $this->isParameterList($tokens, $start);
 
@@ -1048,9 +997,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the array to break instead of its surrounding list, when the line fits up to
-     * its opening bracket and it still has inline items.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return null|array{end: int, start: int}
@@ -1109,8 +1055,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Whether the list has items to move onto their own lines.
-     *
      * @param Tokens<Token> $tokens
      */
     private function isBreakableList(Tokens $tokens, int $start, int $end): bool
@@ -1182,9 +1126,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Whether the parenthesis holds a condition or groups an expression, rather than arguments
-     * or parameters.
-     *
      * @param Tokens<Token> $tokens
      */
     private function isGroupingParenthesis(Tokens $tokens, int $open): bool
@@ -1349,9 +1290,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Puts a function body's opening brace after the closing parenthesis of its multiline
-     * parameters, as PSR-12 requires.
-     *
      * @param Tokens<Token> $tokens
      */
     private function joinBodyBrace(Tokens $tokens, int $start): void
@@ -1386,11 +1324,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Joins only chains whose complete projected line fits, including nested chains. A
-     * two-call chain with a wrapped head can join its tail from the closing parenthesis.
-     * After outer constructs have moved, this also removes stale inner breaks without
-     * creating long lines that would need another splitting pass.
-     *
      * @param Tokens<Token> $tokens
      */
     private function joinChains(Tokens $tokens, int $lineLength, bool $rejoinLong): void
@@ -1439,7 +1372,6 @@ final class LineLengthFixer extends AbstractFixer implements
                 }
             }
 
-            // Arguments and other code that span lines keep the chain on separate lines.
             for ($index = $chain['root']; $index <= $chain['end']; ++$index) {
                 if (! isset($joinable[$index])
                     && str_contains($tokens[$index]->getContent(), "\n")) {
@@ -1473,9 +1405,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Measures the chain's line as if its own, sibling and nested chains were inline, ignoring a
-     * trailing line comment.
-     *
      * @param Tokens<Token> $tokens
      * @param array{breaks: list<int>, clean: bool, end: int, root: int, start: int} $chain
      * @param list<array{breaks: list<int>, clean: bool, end: int, root: int, start: int}> $chains
@@ -1530,8 +1459,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Joins test calls whose title and closure were split onto their own lines.
-     *
      * @param Tokens<Token> $tokens
      */
     private function joinTestCalls(Tokens $tokens): void
@@ -1547,7 +1474,6 @@ final class LineLengthFixer extends AbstractFixer implements
             $close = $tokens->findBlockEnd(Tokens::BLOCK_TYPE_PARENTHESIS, $open);
             $gap = $closure['start'] - 1;
 
-            // Comments between the arguments keep their lines.
             if ($title === null || $gap !== $title + 2
                 || ! $tokens[$gap]->isWhitespace()
                 || ! str_contains($tokens[$gap]->getContent(), "\n")) {
@@ -1605,9 +1531,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Measures the code on the line from $first to $last, without a trailing line comment.
-     * An explicit prefix measures a proposed continuation instead of the current line.
-     *
      * @param Tokens<Token> $tokens
      */
     private function lineWidth(
@@ -1649,9 +1572,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the end of an argument, parameter, array, closure use or destructuring list. Arrow
-     * function parameters are left alone, since a long arrow function is long in its body.
-     *
      * @param Tokens<Token> $tokens
      */
     private function listEnd(Tokens $tokens, int $index): null|int
@@ -1687,9 +1607,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the operators of the lowest precedence between $start and $end, outside nested
-     * code, when they are operators that break lines.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return null|non-empty-list<int>
@@ -1725,7 +1642,6 @@ final class LineLengthFixer extends AbstractFixer implements
         foreach ($operators as $index => $precedence) {
             $previous = $tokens->getPrevMeaningfulToken($index);
 
-            // The colon of a short ternary stays with its question mark.
             if ($precedence === $lowest && ($previous === null || ! $tokens[$index]->equals(':')
                 || ! $tokens[$previous]->equals('?'))) {
                 $group[] = $index;
@@ -1735,10 +1651,6 @@ final class LineLengthFixer extends AbstractFixer implements
         return $group === [] ? null : $group;
     }
 
-    /**
-     * Ranks the binary operators by PHP precedence, lowest first. Other operators bind tighter
-     * than all of these.
-     */
     private function precedence(Token $token): null|int
     {
         return match (true) {
@@ -1852,7 +1764,6 @@ final class LineLengthFixer extends AbstractFixer implements
         $indent = $originalIndent.$this->whitespacesConfig->getIndent();
 
         foreach ($chain['calls'] as $offset => $call) {
-            // The first of two calls, or an initial static call, stays on the root line.
             if ($offset === 0 && (count($chain['calls']) === 2
                 || $tokens[$call['operator']]->isGivenKind(T_DOUBLE_COLON))) {
                 continue;
@@ -1959,9 +1870,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Finds the closure of a test call such as it('title', function () {}), whose arguments stay
-     * on the call's line, like test runners print them.
-     *
      * @param Tokens<Token> $tokens
      *
      * @return null|array{arrow: bool, end: int, start: int}
@@ -2020,10 +1928,6 @@ final class LineLengthFixer extends AbstractFixer implements
     }
 
     /**
-     * Ends the chain before a static access that ends it, such as ->first()::class, so the calls
-     * before it can break. A static access in the middle of the chain conflicts with the native
-     * :: whitespace, so that chain is left alone.
-     *
      * @param array{calls: list<array{end: int, open: int, operator: int}>, end: int, members: list<int>} $chain
      * @param Tokens<Token> $tokens
      *

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use HosmelQ\PhpCodingStandard\Fixer\BlankLineBetweenStatementGroupsFixer;
+use HosmelQ\PhpCodingStandard\Fixer\ConvergeFixer;
 use HosmelQ\PhpCodingStandard\Fixer\HeredocBlankLineFixer;
 use HosmelQ\PhpCodingStandard\Fixer\LineLengthFixer;
 use HosmelQ\PhpCodingStandard\Fixer\NoBlankLineBetweenAssignmentsFixer;
@@ -169,6 +170,7 @@ use Symplify\EasyCodingStandard\Config\ECSConfig;
 
 return ECSConfig::configure()
     ->withRules([
+        ConvergeFixer::class,
         HeredocBlankLineFixer::class,
         LineLengthFixer::class,
         BlankLineBetweenStatementGroupsFixer::class,

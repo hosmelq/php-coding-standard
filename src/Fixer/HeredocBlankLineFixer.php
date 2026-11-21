@@ -34,7 +34,6 @@ final class HeredocBlankLineFixer extends AbstractFixer
     #[Override]
     public function getPriority(): int
     {
-        // Clean up after heredoc_indentation, which can leave these lines for a second run.
         return -27;
     }
 
@@ -75,7 +74,6 @@ final class HeredocBlankLineFixer extends AbstractFixer
                 $lines = explode("\n", $content);
 
                 foreach ($lines as $line => $text) {
-                    // Only whole lines inside the body: not the text before the first line break.
                     if ($line === 0 && ! $this->startsLine($tokens, $part)) {
                         continue;
                     }

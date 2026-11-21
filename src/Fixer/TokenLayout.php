@@ -34,9 +34,6 @@ final class TokenLayout
     }
 
     /**
-     * Replaces the $from indentation with $to on every line that starts inside the range,
-     * including heredoc bodies and closing markers, so their values do not change.
-     *
      * @param Tokens<Token> $tokens
      */
     public static function reindent(
@@ -112,8 +109,6 @@ final class TokenLayout
     }
 
     /**
-     * Puts each item of the list between $start and $end on its own line, with a trailing comma.
-     *
      * @param Tokens<Token> $tokens
      */
     public static function split(
@@ -144,7 +139,6 @@ final class TokenLayout
 
         $itemStart = ($trailing[$start] ?? $start) + 1;
 
-        // Indent nested lines first, while every item still has its original line.
         foreach ([...$separators, $end] as $separator) {
             $first = $itemStart;
 
@@ -173,7 +167,6 @@ final class TokenLayout
         foreach ([...$separators, $end] as $separator) {
             $boundary = $itemStart - 1;
 
-            // A line comment after the opening token or a comma stays at the end of that line.
             if (($trailing[$boundary] ?? null) !== null) {
                 $result[] = new Token([T_WHITESPACE, ' ']);
                 $result[] = $tokens[$trailing[$boundary]];
@@ -239,8 +232,6 @@ final class TokenLayout
     }
 
     /**
-     * Finds a line comment that follows $index on the same line, before $end.
-     *
      * @param Tokens<Token> $tokens
      */
     private static function trailingComment(Tokens $tokens, int $index, int $end): null|int
